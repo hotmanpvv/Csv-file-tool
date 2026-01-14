@@ -42,7 +42,7 @@ def create_csv_string(data):
         CSV content as string
     """
     output = io.StringIO()
-    writer = csv.writer(output)
+    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
     
     # Write header
     writer.writerow(['ICCID', 'ICCID'])
@@ -361,4 +361,4 @@ with col2:
 
 # Footer
 st.markdown("<br><br>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: white; opacity: 0.7;'>Made with ❤️ for efficient ICCID processing</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: white; opacity: 0.7;'>Made with ❤️ by Othmane Elmekaoui</p>", unsafe_allow_html=True)
