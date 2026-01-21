@@ -39,25 +39,25 @@ def create_csv_string(data):
         data: List of tuples (original_iccid, processed_iccid)
 
     Returns:
-        CSV content as stringWRITE
+        CSV content as string
     """
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
     
-   
+    
     # Write data - processed ICCID in both columns
     for original, processed in data:
         writer.writerow([processed, processed])
     
     return output.getvalue()
 
-def create_range_csv_string(start_iccid, end_iccid):
+def create_range_csv_string(start_iccids, end_iccids):
     """
-    Create CSV string with start ICCID in first column and end ICCID in second column.
+    Create CSV string with start ICCIDs in first column and end ICCIDs in second column.
 
     Args:
-        start_iccid: Starting ICCID string
-        end_iccid: Ending ICCID string
+        start_iccids: List of starting ICCID strings
+        end_iccids: List of ending ICCID strings
 
     Returns:
         CSV content as string
@@ -65,9 +65,15 @@ def create_range_csv_string(start_iccid, end_iccid):
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
     
+   
     
-    # Write data
-    writer.writerow([start_iccid, end_iccid])
+    # Write data - pair each start with corresponding end
+    max_length = max(len(start_iccids), len(end_iccids))
+    
+    for i in range(max_length):
+        start = start_iccids[i] if i < len(start_iccids) else ""
+        end = end_iccids[i] if i < len(end_iccids) else ""
+        writer.writerow([start, end])
     
     return output.getvalue()
 
@@ -264,22 +270,24 @@ with col2:
         else:
             # Range mode
             st.markdown("### 🔢 Enter ICCID Range")
-            st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Specify the start and end ICCID</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Enter start and end ICCIDs (one per line, pairs will be matched)</p>", unsafe_allow_html=True)
             
             col_range1, col_range2 = st.columns(2)
             
             with col_range1:
-                start_iccid = st.text_input(
-                    "Start ICCID",
-                    placeholder="8988228066623425355",
-                    help="Enter the starting ICCID"
+                start_iccid = st.text_area(
+                    "Start ICCIDs",
+                    height=250,
+                    placeholder="8988228066623425355\n8988228066623425365\n8988228066623425375\n...",
+                    help="Enter starting ICCIDs (one per line)"
                 )
             
             with col_range2:
-                end_iccid = st.text_input(
-                    "End ICCID",
-                    placeholder="8988228066623425365",
-                    help="Enter the ending ICCID"
+                end_iccid = st.text_area(
+                    "End ICCIDs",
+                    height=250,
+                    placeholder="8988228066623425360\n8988228066623425370\n8988228066623425380\n...",
+                    help="Enter ending ICCIDs (one per line)"
                 )
             
             st.markdown("<br>", unsafe_allow_html=True)
@@ -375,62 +383,95 @@ with col2:
             else:
                 # Range mode processing
                 if not start_iccid.strip() or not end_iccid.strip():
-                    st.error("⚠️ Please enter both start and end ICCID.")
+                    st.error("⚠️ Please enter both start and end ICCIDs.")
                 else:
-                    # Process the ICCIDs (trim if needed)
-                    start_processed = start_iccid.strip()[:19] if len(start_iccid.strip()) > 19 else start_iccid.strip()
-                    end_processed = end_iccid.strip()[:19] if len(end_iccid.strip()) > 19 else end_iccid.strip()
+                    # Parse input - split by lines
+                    start_iccids = [line.strip() for line in start_iccid.strip().split('\n') if line.strip()]
+                    end_iccids = [line.strip() for line in end_iccid.strip().split('\n') if line.strip()]
                     
-                    # Create CSV content
-                    csv_content = create_range_csv_string(start_processed, end_processed)
-                    
-                    # Display success message
-                    st.success("✅ ICCID range CSV generated successfully!")
-                    
-                    # Statistics cards
-                    stat_col1, stat_col2 = st.columns(2)
-                    
-                    with stat_col1:
-                        st.markdown(f"""
-                        <div class='stat-card'>
-                            <p class='stat-number'>{start_processed}</p>
-                            <p class='stat-label'>Start ICCID</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with stat_col2:
-                        st.markdown(f"""
-                        <div class='stat-card'>
-                            <p class='stat-number'>{end_processed}</p>
-                            <p class='stat-label'>End ICCID</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    
-                    # Show preview
-                    with st.expander("👀 Preview Range Data", expanded=True):
-                        preview_df = {
-                            '🎯 Start ICCID': [start_processed],
-                            '🏁 End ICCID': [end_processed],
-                            '📏 Start Length': [len(start_processed)],
-                            '📏 End Length': [len(end_processed)]
-                        }
+                    if not start_iccids or not end_iccids:
+                        st.error("⚠️ Please enter valid ICCIDs.")
+                    else:
+                        # Process the ICCIDs (trim if needed)
+                        start_processed = [s[:19] if len(s) > 19 else s for s in start_iccids]
+                        end_processed = [e[:19] if len(e) > 19 else e for e in end_iccids]
                         
-                        st.dataframe(preview_df, use_container_width=True)
-                    
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    
-                    # Download button
-                    col_dl1, col_dl2, col_dl3 = st.columns([2, 4, 2])
-                    with col_dl2:
-                        st.download_button(
-                            label="⬇️ Download CSV File",
-                            data=csv_content,
-                            file_name="iccids_range_output.csv",
-                            mime="text/csv",
-                            use_container_width=True
-                        )
+                        # Create CSV content
+                        csv_content = create_range_csv_string(start_processed, end_processed)
+                        
+                        # Display success message
+                        st.success("✅ ICCID range CSV generated successfully!")
+                        
+                        # Statistics cards
+                        stat_col1, stat_col2, stat_col3 = st.columns(3)
+                        
+                        with stat_col1:
+                            st.markdown(f"""
+                            <div class='stat-card'>
+                                <p class='stat-number'>{len(start_processed)}</p>
+                                <p class='stat-label'>Start ICCIDs</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with stat_col2:
+                            st.markdown(f"""
+                            <div class='stat-card'>
+                                <p class='stat-number'>{len(end_processed)}</p>
+                                <p class='stat-label'>End ICCIDs</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with stat_col3:
+                            total_pairs = max(len(start_processed), len(end_processed))
+                            st.markdown(f"""
+                            <div class='stat-card'>
+                                <p class='stat-number'>{total_pairs}</p>
+                                <p class='stat-label'>Total Rows</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        
+                        # Show preview
+                        with st.expander("👀 Preview Range Data", expanded=True):
+                            preview_count = min(10, max(len(start_processed), len(end_processed)))
+                            
+                            preview_starts = start_processed[:preview_count]
+                            preview_ends = end_processed[:preview_count]
+                            
+                            # Pad lists to same length for display
+                            while len(preview_starts) < preview_count:
+                                preview_starts.append("")
+                            while len(preview_ends) < preview_count:
+                                preview_ends.append("")
+                            
+                            preview_df = {
+                                '🎯 Start ICCID': preview_starts,
+                                '🏁 End ICCID': preview_ends,
+                            }
+                            
+                            st.dataframe(preview_df, use_container_width=True, height=400)
+                            
+                            total_rows = max(len(start_processed), len(end_processed))
+                            if total_rows > 10:
+                                st.info(f"📊 Showing 10 of {total_rows} total rows")
+                            
+                            # Warning if lists are different lengths
+                            if len(start_processed) != len(end_processed):
+                                st.warning(f"⚠️ Note: You have {len(start_processed)} start ICCIDs and {len(end_processed)} end ICCIDs. Empty cells will be added where needed.")
+                        
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        
+                        # Download button
+                        col_dl1, col_dl2, col_dl3 = st.columns([2, 4, 2])
+                        with col_dl2:
+                            st.download_button(
+                                label="⬇️ Download CSV File",
+                                data=csv_content,
+                                file_name="iccids_range_output.csv",
+                                mime="text/csv",
+                                use_container_width=True
+                            )
     
     with tab2:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -502,5 +543,3 @@ with col2:
 # Footer
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: white; opacity: 0.7;'>Made with ❤️ for efficient ICCID processing</p>", unsafe_allow_html=True)
-
-
