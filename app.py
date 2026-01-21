@@ -39,10 +39,10 @@ def create_csv_string(data):
         data: List of tuples (original_iccid, processed_iccid)
 
     Returns:
-        CSV content as string
+        CSV content as stringWRITE
     """
     output = io.StringIO()
-    writer = csv.writer(output, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
     
     # Write header - two distinct columns
     writer.writerow(['ICCID_1', 'ICCID_2'])
@@ -65,7 +65,7 @@ def create_range_csv_string(start_iccid, end_iccid):
         CSV content as string
     """
     output = io.StringIO()
-    writer = csv.writer(output, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
     
     # Write header
     writer.writerow(['Start_ICCID', 'End_ICCID'])
@@ -506,3 +506,4 @@ with col2:
 # Footer
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: white; opacity: 0.7;'>Made with ❤️ for efficient ICCID processing</p>", unsafe_allow_html=True)
+
