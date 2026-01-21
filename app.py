@@ -241,6 +241,11 @@ with col2:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # Initialize variables
+        iccid_input = ""
+        start_iccid = ""
+        end_iccid = ""
+        
         if mode == "📝 List Mode - Process multiple ICCIDs":
             # Input section for list mode
             st.markdown("### 📝 Enter Your ICCIDs")
@@ -292,69 +297,131 @@ with col2:
         
         # Process and display results
         if generate_button:
-            if not iccid_input.strip():
-                st.error("⚠️ Please enter at least one ICCID to process.")
-            else:
-                # Parse input
-                iccids = [line.strip() for line in iccid_input.strip().split('\n') if line.strip()]
-                
-                # Process ICCIDs
-                with st.spinner('Processing ICCIDs...'):
-                    processed_data = process_iccids(iccids)
-                
-                if not processed_data:
-                    st.error("⚠️ No valid ICCIDs found. Please check your input.")
+            if mode == "📝 List Mode - Process multiple ICCIDs":
+                # List mode processing
+                if not iccid_input.strip():
+                    st.error("⚠️ Please enter at least one ICCID to process.")
                 else:
-                    # Create CSV content
-                    csv_content = create_csv_string(processed_data)
+                    # Parse input
+                    iccids = [line.strip() for line in iccid_input.strip().split('\n') if line.strip()]
                     
-                    # Display success message with stats
-                    st.success(f"✅ Successfully processed {len(processed_data)} ICCID(s)!")
+                    # Process ICCIDs
+                    with st.spinner('Processing ICCIDs...'):
+                        processed_data = process_iccids(iccids)
+                    
+                    if not processed_data:
+                        st.error("⚠️ No valid ICCIDs found. Please check your input.")
+                    else:
+                        # Create CSV content
+                        csv_content = create_csv_string(processed_data)
+                        
+                        # Display success message with stats
+                        st.success(f"✅ Successfully processed {len(processed_data)} ICCID(s)!")
+                        
+                        # Statistics cards
+                        stat_col1, stat_col2, stat_col3 = st.columns(3)
+                        
+                        with stat_col1:
+                            st.markdown(f"""
+                            <div class='stat-card'>
+                                <p class='stat-number'>{len(processed_data)}</p>
+                                <p class='stat-label'>ICCIDs Processed</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with stat_col2:
+                            trimmed_count = sum(1 for orig, proc in processed_data if len(orig) > 19)
+                            st.markdown(f"""
+                            <div class='stat-card'>
+                                <p class='stat-number'>{trimmed_count}</p>
+                                <p class='stat-label'>Trimmed</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with stat_col3:
+                            st.markdown(f"""
+                            <div class='stat-card'>
+                                <p class='stat-number'>{len(processed_data) - trimmed_count}</p>
+                                <p class='stat-label'>Unchanged</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        
+                        # Show preview
+                        with st.expander("👀 Preview Processed Data", expanded=True):
+                            preview_data = processed_data[:10]
+                            
+                            preview_df = {
+                                '📋 Original ICCID': [orig for orig, _ in preview_data],
+                                '✨ Processed ICCID': [proc for _, proc in preview_data],
+                                '📏 Length': [len(proc) for _, proc in preview_data]
+                            }
+                            
+                            st.dataframe(preview_df, use_container_width=True, height=400)
+                            
+                            if len(processed_data) > 10:
+                                st.info(f"📊 Showing 10 of {len(processed_data)} total rows")
+                        
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        
+                        # Download button
+                        col_dl1, col_dl2, col_dl3 = st.columns([2, 4, 2])
+                        with col_dl2:
+                            st.download_button(
+                                label="⬇️ Download CSV File",
+                                data=csv_content,
+                                file_name="iccids_output.csv",
+                                mime="text/csv",
+                                use_container_width=True
+                            )
+            
+            else:
+                # Range mode processing
+                if not start_iccid.strip() or not end_iccid.strip():
+                    st.error("⚠️ Please enter both start and end ICCID.")
+                else:
+                    # Process the ICCIDs (trim if needed)
+                    start_processed = start_iccid.strip()[:19] if len(start_iccid.strip()) > 19 else start_iccid.strip()
+                    end_processed = end_iccid.strip()[:19] if len(end_iccid.strip()) > 19 else end_iccid.strip()
+                    
+                    # Create CSV content
+                    csv_content = create_range_csv_string(start_processed, end_processed)
+                    
+                    # Display success message
+                    st.success("✅ ICCID range CSV generated successfully!")
                     
                     # Statistics cards
-                    stat_col1, stat_col2, stat_col3 = st.columns(3)
+                    stat_col1, stat_col2 = st.columns(2)
                     
                     with stat_col1:
                         st.markdown(f"""
                         <div class='stat-card'>
-                            <p class='stat-number'>{len(processed_data)}</p>
-                            <p class='stat-label'>ICCIDs Processed</p>
+                            <p class='stat-number'>{start_processed}</p>
+                            <p class='stat-label'>Start ICCID</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     with stat_col2:
-                        trimmed_count = sum(1 for orig, proc in processed_data if len(orig) > 19)
                         st.markdown(f"""
                         <div class='stat-card'>
-                            <p class='stat-number'>{trimmed_count}</p>
-                            <p class='stat-label'>Trimmed</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with stat_col3:
-                        st.markdown(f"""
-                        <div class='stat-card'>
-                            <p class='stat-number'>{len(processed_data) - trimmed_count}</p>
-                            <p class='stat-label'>Unchanged</p>
+                            <p class='stat-number'>{end_processed}</p>
+                            <p class='stat-label'>End ICCID</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     
                     # Show preview
-                    with st.expander("👀 Preview Processed Data", expanded=True):
-                        preview_data = processed_data[:10]
-                        
+                    with st.expander("👀 Preview Range Data", expanded=True):
                         preview_df = {
-                            '📋 Original ICCID': [orig for orig, _ in preview_data],
-                            '✨ Processed ICCID': [proc for _, proc in preview_data],
-                            '📏 Length': [len(proc) for _, proc in preview_data]
+                            '🎯 Start ICCID': [start_processed],
+                            '🏁 End ICCID': [end_processed],
+                            '📏 Start Length': [len(start_processed)],
+                            '📏 End Length': [len(end_processed)]
                         }
                         
-                        st.dataframe(preview_df, use_container_width=True, height=400)
-                        
-                        if len(processed_data) > 10:
-                            st.info(f"📊 Showing 10 of {len(processed_data)} total rows")
+                        st.dataframe(preview_df, use_container_width=True)
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     
@@ -364,7 +431,7 @@ with col2:
                         st.download_button(
                             label="⬇️ Download CSV File",
                             data=csv_content,
-                            file_name="iccids_output.csv",
+                            file_name="iccids_range_output.csv",
                             mime="text/csv",
                             use_container_width=True
                         )
@@ -374,6 +441,23 @@ with col2:
         
         # Instructions
         st.markdown("### 🎯 How to Use")
+        
+        st.markdown("""
+        #### 📝 List Mode
+        Process multiple ICCIDs at once:
+        - Paste your ICCIDs (one per line)
+        - Click "Generate CSV"
+        - Get a CSV with duplicate columns for each processed ICCID
+        
+        #### 🔢 Range Mode
+        Generate a CSV with start and end ICCIDs:
+        - Enter a starting ICCID
+        - Enter an ending ICCID
+        - Click "Generate CSV"
+        - Get a CSV with start in first column, end in second column
+        
+        ---
+        """)
         
         col_inst1, col_inst2 = st.columns(2)
         
