@@ -44,9 +44,7 @@ def create_csv_string(data):
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
     
-    # Write header - two distinct columns
-    writer.writerow(['ICCID_1', 'ICCID_2'])
-    
+   
     # Write data - processed ICCID in both columns
     for original, processed in data:
         writer.writerow([processed, processed])
@@ -67,8 +65,6 @@ def create_range_csv_string(start_iccid, end_iccid):
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
     
-    # Write header
-    writer.writerow(['Start_ICCID', 'End_ICCID'])
     
     # Write data
     writer.writerow([start_iccid, end_iccid])
@@ -506,4 +502,5 @@ with col2:
 # Footer
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: white; opacity: 0.7;'>Made with ❤️ for efficient ICCID processing</p>", unsafe_allow_html=True)
+
 
