@@ -42,12 +42,36 @@ def create_csv_string(data):
         CSV content as string
     """
     output = io.StringIO()
-    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
-
+    writer = csv.writer(output, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+    
+    # Write header - two distinct columns
+    writer.writerow(['ICCID_1', 'ICCID_2'])
     
     # Write data - processed ICCID in both columns
     for original, processed in data:
         writer.writerow([processed, processed])
+    
+    return output.getvalue()
+
+def create_range_csv_string(start_iccid, end_iccid):
+    """
+    Create CSV string with start ICCID in first column and end ICCID in second column.
+
+    Args:
+        start_iccid: Starting ICCID string
+        end_iccid: Ending ICCID string
+
+    Returns:
+        CSV content as string
+    """
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+    
+    # Write header
+    writer.writerow(['Start_ICCID', 'End_ICCID'])
+    
+    # Write data
+    writer.writerow([start_iccid, end_iccid])
     
     return output.getvalue()
 
@@ -208,23 +232,61 @@ with col2:
     with tab1:
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Input section
-        st.markdown("### 📝 Enter Your ICCIDs")
-        st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Paste your ICCIDs below, one per line</p>", unsafe_allow_html=True)
-        
-        iccid_input = st.text_area(
-            "ICCIDs",
-            height=250,
-            placeholder="8988228066623425355\n8988228066627262560\n8988228066627262660\n8988228066627262760\n8988228066627262860\n...",
+        # Mode selection
+        mode = st.radio(
+            "Choose processing mode:",
+            ["📝 List Mode - Process multiple ICCIDs", "🔢 Range Mode - Generate from start to end"],
             label_visibility="collapsed"
         )
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Generate button
-        col_btn1, col_btn2, col_btn3 = st.columns([3, 2, 3])
-        with col_btn2:
-            generate_button = st.button("🚀 Generate CSV", type="primary", use_container_width=True)
+        if mode == "📝 List Mode - Process multiple ICCIDs":
+            # Input section for list mode
+            st.markdown("### 📝 Enter Your ICCIDs")
+            st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Paste your ICCIDs below, one per line</p>", unsafe_allow_html=True)
+            
+            iccid_input = st.text_area(
+                "ICCIDs",
+                height=250,
+                placeholder="8988228066623425355\n8988228066627262560\n8988228066627262660\n8988228066627262760\n8988228066627262860\n...",
+                label_visibility="collapsed"
+            )
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Generate button
+            col_btn1, col_btn2, col_btn3 = st.columns([3, 2, 3])
+            with col_btn2:
+                generate_button = st.button("🚀 Generate CSV", type="primary", use_container_width=True)
+        
+        else:
+            # Range mode
+            st.markdown("### 🔢 Enter ICCID Range")
+            st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Specify the start and end ICCID</p>", unsafe_allow_html=True)
+            
+            col_range1, col_range2 = st.columns(2)
+            
+            with col_range1:
+                start_iccid = st.text_input(
+                    "Start ICCID",
+                    placeholder="8988228066623425355",
+                    help="Enter the starting ICCID"
+                )
+            
+            with col_range2:
+                end_iccid = st.text_input(
+                    "End ICCID",
+                    placeholder="8988228066623425365",
+                    help="Enter the ending ICCID"
+                )
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Generate button for range mode
+            col_btn1, col_btn2, col_btn3 = st.columns([3, 2, 3])
+            with col_btn2:
+                generate_button = st.button("🚀 Generate CSV", type="primary", use_container_width=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -359,5 +421,4 @@ with col2:
 
 # Footer
 st.markdown("<br><br>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: white; opacity: 0.7;'>Made with ❤️ by Othmane Elmekaoui</p>", unsafe_allow_html=True)
-
+st.markdown("<p style='text-align: center; color: white; opacity: 0.7;'>Made with ❤️ for efficient ICCID processing</p>", unsafe_allow_html=True)
