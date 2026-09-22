@@ -246,6 +246,12 @@ with col2:
                 label_visibility="collapsed"
             )
 
+            custom_filename = st.text_input(
+                "📁 Output filename (optional)",
+                placeholder="iccids_output",
+                help="Enter a custom name for the downloaded CSV file (without .csv extension)"
+            )
+
             st.markdown("<br>", unsafe_allow_html=True)
 
             col_btn1, col_btn2, col_btn3 = st.columns([3, 2, 3])
@@ -274,6 +280,12 @@ with col2:
                     help="Enter ending ICCIDs (one per line)"
                 )
 
+            custom_filename = st.text_input(
+                "📁 Output filename (optional)",
+                placeholder="iccids_range_output",
+                help="Enter a custom name for the downloaded CSV file (without .csv extension)"
+            )
+
             st.markdown("<br>", unsafe_allow_html=True)
 
             col_btn1, col_btn2, col_btn3 = st.columns([3, 2, 3])
@@ -294,19 +306,17 @@ with col2:
             if uploaded_file:
                 st.info(f"📄 Uploaded: **{uploaded_file.name}** ({uploaded_file.size / 1024:.1f} KB)")
 
+            custom_filename = st.text_input(
+                "📁 Output filename (optional)",
+                placeholder="iccids_file_output",
+                help="Enter a custom name for the downloaded CSV file (without .csv extension)"
+            )
+
             st.markdown("<br>", unsafe_allow_html=True)
 
             col_btn1, col_btn2, col_btn3 = st.columns([3, 2, 3])
             with col_btn2:
                 generate_button = st.button("🚀 Generate CSV", type="primary", use_container_width=True)
-
-        # Optional filename input
-        st.markdown("<br>", unsafe_allow_html=True)
-        custom_filename = st.text_input(
-            "📁 Output filename (optional)",
-            placeholder="iccids_output",
-            help="Enter a custom name for the downloaded CSV file (without .csv extension)"
-        )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
