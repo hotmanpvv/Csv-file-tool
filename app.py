@@ -239,17 +239,17 @@ with col2:
             st.markdown("### 📝 Enter Your ICCIDs")
             st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Paste your ICCIDs below, one per line</p>", unsafe_allow_html=True)
 
+            custom_filename = st.text_input(
+                "📁 Output filename (optional)",
+                placeholder="iccids_output",
+                help="Enter a custom name for the downloaded CSV file (without .csv extension)"
+            )
+
             iccid_input = st.text_area(
                 "ICCIDs",
                 height=250,
                 placeholder="8988228066623425355\n8988228066627262560\n8988228066627262660\n...",
                 label_visibility="collapsed"
-            )
-
-            custom_filename = st.text_input(
-                "📁 Output filename (optional)",
-                placeholder="iccids_output",
-                help="Enter a custom name for the downloaded CSV file (without .csv extension)"
             )
 
             st.markdown("<br>", unsafe_allow_html=True)
@@ -261,6 +261,12 @@ with col2:
         elif mode == "🔢 Range Mode - Generate from start to end":
             st.markdown("### 🔢 Enter ICCID Range")
             st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Enter start and end ICCIDs (one per line, pairs will be matched)</p>", unsafe_allow_html=True)
+
+            custom_filename = st.text_input(
+                "📁 Output filename (optional)",
+                placeholder="iccids_range_output",
+                help="Enter a custom name for the downloaded CSV file (without .csv extension)"
+            )
 
             col_range1, col_range2 = st.columns(2)
 
@@ -280,12 +286,6 @@ with col2:
                     help="Enter ending ICCIDs (one per line)"
                 )
 
-            custom_filename = st.text_input(
-                "📁 Output filename (optional)",
-                placeholder="iccids_range_output",
-                help="Enter a custom name for the downloaded CSV file (without .csv extension)"
-            )
-
             st.markdown("<br>", unsafe_allow_html=True)
 
             col_btn1, col_btn2, col_btn3 = st.columns([3, 2, 3])
@@ -296,6 +296,12 @@ with col2:
             st.markdown("### 📁 Upload ICCID File")
             st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Upload a CSV or Excel file with <b>Start ICCID</b> and <b>End ICCID</b> columns</p>", unsafe_allow_html=True)
 
+            custom_filename = st.text_input(
+                "📁 Output filename (optional)",
+                placeholder="iccids_file_output",
+                help="Enter a custom name for the downloaded CSV file (without .csv extension)"
+            )
+
             uploaded_file = st.file_uploader(
                 "Upload file",
                 type=["xlsx", "xls", "csv"],
@@ -305,12 +311,6 @@ with col2:
 
             if uploaded_file:
                 st.info(f"📄 Uploaded: **{uploaded_file.name}** ({uploaded_file.size / 1024:.1f} KB)")
-
-            custom_filename = st.text_input(
-                "📁 Output filename (optional)",
-                placeholder="iccids_file_output",
-                help="Enter a custom name for the downloaded CSV file (without .csv extension)"
-            )
 
             st.markdown("<br>", unsafe_allow_html=True)
 
