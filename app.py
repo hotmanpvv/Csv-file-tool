@@ -213,7 +213,7 @@ st.markdown("<p style='text-align: center; color: white; font-size: 1.2rem; marg
 col1, col2, col3 = st.columns([1, 8, 1])
 
 with col2:
-    tab1, tab2 = st.tabs(["🔧 Process ICCIDs", "📚 Instructions"])
+    tab1, tab2, tab3 = st.tabs(["🔧 Process ICCIDs", "✂️ Split ICCIDs", "📚 Instructions"])
 
     with tab1:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -552,6 +552,116 @@ with col2:
     with tab2:
         st.markdown("<br>", unsafe_allow_html=True)
 
+        st.markdown("### ✂️ Split ICCIDs into Chunks")
+        st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Paste your ICCIDs and choose a chunk size to split them into multiple downloadable files</p>", unsafe_allow_html=True)
+
+        split_filename = st.text_input(
+            "📁 Output filename prefix (optional)",
+            placeholder="iccids_chunk",
+            help="Each file will be named prefix_1.csv, prefix_2.csv, etc.",
+            key="split_filename"
+        )
+
+        split_input = st.text_area(
+            "ICCIDs to split",
+            height=250,
+            placeholder="8988228066623425355\n8988228066627262560\n8988228066627262660\n...",
+            label_visibility="collapsed",
+            key="split_input"
+        )
+
+        chunk_size = st.number_input(
+            "Chunk size (ICCIDs per file)",
+            min_value=1,
+            value=1000,
+            step=100,
+            help="How many ICCIDs per output file"
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        col_s1, col_s2, col_s3 = st.columns([3, 2, 3])
+        with col_s2:
+            split_button = st.button("✂️ Split & Generate", type="primary", use_container_width=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        if split_button:
+            if not split_input.strip():
+                st.error("⚠️ Please enter at least one ICCID.")
+            else:
+                raw_iccids = [line.strip() for line in split_input.strip().split('\n') if line.strip()]
+                processed = process_iccids(raw_iccids)
+                total = len(processed)
+
+                if total == 0:
+                    st.error("⚠️ No valid ICCIDs found.")
+                elif total <= chunk_size:
+                    st.error(f"⚠️ Total ICCIDs ({total}) must be greater than chunk size ({chunk_size}). Use the Process tab for smaller batches.")
+                else:
+                    chunks = []
+                    for i in range(0, total, chunk_size):
+                        chunks.append(processed[i:i + chunk_size])
+
+                    num_chunks = len(chunks)
+                    prefix = split_filename.strip() if split_filename.strip() else "iccids_chunk"
+
+                    st.success(f"✅ Split {total} ICCIDs into {num_chunks} chunk(s) of up to {chunk_size} each!")
+
+                    stat_col1, stat_col2, stat_col3 = st.columns(3)
+
+                    with stat_col1:
+                        st.markdown(f"""
+                        <div class='stat-card'>
+                            <p class='stat-number'>{total}</p>
+                            <p class='stat-label'>Total ICCIDs</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    with stat_col2:
+                        st.markdown(f"""
+                        <div class='stat-card'>
+                            <p class='stat-number'>{num_chunks}</p>
+                            <p class='stat-label'>Chunks</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    with stat_col3:
+                        st.markdown(f"""
+                        <div class='stat-card'>
+                            <p class='stat-number'>{chunk_size}</p>
+                            <p class='stat-label'>Per Chunk</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    st.markdown("<br>", unsafe_allow_html=True)
+
+                    for idx, chunk in enumerate(chunks, 1):
+                        chunk_csv = create_csv_string(chunk)
+                        chunk_len = len(chunk)
+                        filename = f"{prefix}_{idx}.csv"
+
+                        with st.expander(f"📦 Chunk {idx} — {chunk_len} ICCIDs ({filename})", expanded=False):
+                            preview_data = chunk[:5]
+                            preview_df = {
+                                '✨ Processed ICCID': [proc for _, proc in preview_data],
+                            }
+                            st.dataframe(preview_df, use_container_width=True)
+                            if chunk_len > 5:
+                                st.caption(f"Showing 5 of {chunk_len}")
+
+                        st.download_button(
+                            label=f"⬇️ Download {filename}",
+                            data=chunk_csv,
+                            file_name=filename,
+                            mime="text/csv",
+                            use_container_width=True,
+                            key=f"dl_chunk_{idx}"
+                        )
+
+    with tab3:
+        st.markdown("<br>", unsafe_allow_html=True)
+
         st.markdown("### 🎯 How to Use")
 
         st.markdown("""
@@ -573,6 +683,13 @@ with col2:
         - File must have **Start ICCID** and **End ICCID** columns
         - Other columns (Order no., Itemcode, etc.) are ignored
         - ICCIDs are extracted and trimmed automatically
+
+        #### ✂️ Split ICCIDs
+        Split a large list into smaller chunks:
+        - Paste all your ICCIDs
+        - Choose a chunk size (e.g. 1000)
+        - Total ICCIDs must be greater than the chunk size
+        - Download each chunk as a separate CSV file
 
         ---
         """)
