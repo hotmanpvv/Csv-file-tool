@@ -33,6 +33,14 @@ def create_range_csv_string(start_iccids, end_iccids):
         writer.writerow([start, end])
     return output.getvalue()
 
+def create_fulfilment_csv(soi_number, product_blocks):
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+    for product_type, iccids in product_blocks:
+        for _, processed in iccids:
+            writer.writerow([soi_number, product_type, processed, processed])
+    return output.getvalue()
+
 def read_iccids_from_upload(uploaded_file):
     filename = uploaded_file.name.lower()
     start_iccids = []
@@ -213,7 +221,7 @@ st.markdown("<p style='text-align: center; color: white; font-size: 1.2rem; marg
 col1, col2, col3 = st.columns([1, 8, 1])
 
 with col2:
-    tab1, tab2, tab3 = st.tabs(["🔧 Process ICCIDs", "✂️ Split ICCIDs", "📚 Instructions"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🔧 Process ICCIDs", "📋 Fulfilment", "✂️ Split ICCIDs", "📚 Instructions"])
 
     with tab1:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -552,6 +560,146 @@ with col2:
     with tab2:
         st.markdown("<br>", unsafe_allow_html=True)
 
+        st.markdown("### 📋 Fulfilment Template")
+        st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Generate a fulfilment CSV: <b>SOI_NUMBER;PRODUCT;ICCID;ICCID</b></p>", unsafe_allow_html=True)
+
+        soi_number = st.text_input(
+            "SOI Order Number",
+            placeholder="SOI7571555",
+            help="e.g. SOI7571555"
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.markdown("#### Product 1")
+        p1_type = st.number_input("Product type", min_value=1, max_value=99, value=1, key="p1_type", help="1 = product 1, 2 = product 2, etc.")
+        p1_input = st.text_area(
+            "Product 1 ICCIDs",
+            height=200,
+            placeholder="8988228066680672793\n8988228066680672794\n...",
+            key="p1_input",
+            help="Paste ICCIDs for this product, one per line"
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.markdown("#### Product 2")
+        p2_type = st.number_input("Product type", min_value=1, max_value=99, value=2, key="p2_type", help="1 = product 1, 2 = product 2, etc.")
+        p2_input = st.text_area(
+            "Product 2 ICCIDs",
+            height=200,
+            placeholder="8988228066680672800\n8988228066680672801\n...",
+            key="p2_input",
+            help="Paste ICCIDs for this product, one per line (leave empty to skip)"
+        )
+
+        fulfilment_filename = st.text_input(
+            "📁 Output filename (optional)",
+            placeholder="fulfilment_SOI7571555",
+            help="Defaults to fulfilment_[SOI_NUMBER].csv",
+            key="fulfilment_filename"
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        col_f1, col_f2, col_f3 = st.columns([3, 2, 3])
+        with col_f2:
+            fulfilment_button = st.button("📋 Generate Fulfilment", type="primary", use_container_width=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        if fulfilment_button:
+            if not soi_number.strip():
+                st.error("⚠️ Please enter an SOI order number.")
+            elif not p1_input.strip() and not p2_input.strip():
+                st.error("⚠️ Please enter ICCIDs for at least one product.")
+            else:
+                product_blocks = []
+
+                if p1_input.strip():
+                    p1_iccids = [line.strip() for line in p1_input.strip().split('\n') if line.strip()]
+                    p1_processed = process_iccids(p1_iccids)
+                    if p1_processed:
+                        product_blocks.append((p1_type, p1_processed))
+
+                if p2_input.strip():
+                    p2_iccids = [line.strip() for line in p2_input.strip().split('\n') if line.strip()]
+                    p2_processed = process_iccids(p2_iccids)
+                    if p2_processed:
+                        product_blocks.append((p2_type, p2_processed))
+
+                if not product_blocks:
+                    st.error("⚠️ No valid ICCIDs found.")
+                else:
+                    csv_content = create_fulfilment_csv(soi_number.strip(), product_blocks)
+                    total_iccids = sum(len(iccids) for _, iccids in product_blocks)
+
+                    if fulfilment_filename.strip():
+                        output_filename = fulfilment_filename.strip() + ".csv"
+                    else:
+                        output_filename = f"fulfilment_{soi_number.strip()}.csv"
+
+                    st.success(f"✅ Fulfilment file generated with {total_iccids} ICCIDs!")
+
+                    stat_col1, stat_col2, stat_col3 = st.columns(3)
+
+                    with stat_col1:
+                        st.markdown(f"""
+                        <div class='stat-card'>
+                            <p class='stat-number'>{total_iccids}</p>
+                            <p class='stat-label'>Total ICCIDs</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    with stat_col2:
+                        st.markdown(f"""
+                        <div class='stat-card'>
+                            <p class='stat-number'>{len(product_blocks)}</p>
+                            <p class='stat-label'>Products</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    with stat_col3:
+                        st.markdown(f"""
+                        <div class='stat-card'>
+                            <p class='stat-number'>{soi_number.strip()}</p>
+                            <p class='stat-label'>SOI Number</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    st.markdown("<br>", unsafe_allow_html=True)
+
+                    with st.expander("👀 Preview Fulfilment Data", expanded=True):
+                        preview_rows = []
+                        for product_type, iccids in product_blocks:
+                            for _, proc in iccids[:5]:
+                                preview_rows.append((soi_number.strip(), str(product_type), proc, proc))
+                        preview_df = {
+                            '🏷️ SOI': [r[0] for r in preview_rows],
+                            '📦 Product': [r[1] for r in preview_rows],
+                            '🔑 ICCID': [r[2] for r in preview_rows],
+                            '🔑 ICCID (copy)': [r[3] for r in preview_rows],
+                        }
+                        st.dataframe(preview_df, use_container_width=True, height=400)
+                        if total_iccids > len(preview_rows):
+                            st.info(f"📊 Showing {len(preview_rows)} of {total_iccids} total rows")
+
+                    st.markdown("<br>", unsafe_allow_html=True)
+
+                    col_dl1, col_dl2, col_dl3 = st.columns([2, 4, 2])
+                    with col_dl2:
+                        st.download_button(
+                            label="⬇️ Download Fulfilment CSV",
+                            data=csv_content,
+                            file_name=output_filename,
+                            mime="text/csv",
+                            use_container_width=True,
+                            key="dl_fulfilment"
+                        )
+
+    with tab3:
+        st.markdown("<br>", unsafe_allow_html=True)
+
         st.markdown("### ✂️ Split ICCIDs into Chunks")
         st.markdown("<p style='color: #666; margin-bottom: 1rem;'>Paste your ICCIDs and choose a chunk size to split them into multiple downloadable files</p>", unsafe_allow_html=True)
 
@@ -659,7 +807,7 @@ with col2:
                             key=f"dl_chunk_{idx}"
                         )
 
-    with tab3:
+    with tab4:
         st.markdown("<br>", unsafe_allow_html=True)
 
         st.markdown("### 🎯 How to Use")
@@ -683,6 +831,13 @@ with col2:
         - File must have **Start ICCID** and **End ICCID** columns
         - Other columns (Order no., Itemcode, etc.) are ignored
         - ICCIDs are extracted and trimmed automatically
+
+        #### 📋 Fulfilment
+        Generate a fulfilment template CSV:
+        - Enter your SOI order number
+        - Add ICCIDs for Product 1 and/or Product 2
+        - Output format: **SOI;PRODUCT;ICCID;ICCID**
+        - Both products merge into one file
 
         #### ✂️ Split ICCIDs
         Split a large list into smaller chunks:
